@@ -1,4 +1,5 @@
 import httpRequest from "../../utils/httpRequest.js";
+import getNewAccessToken from "../../utils/getNewAccessToken.js";
 
 document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("loginForm");
@@ -47,8 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             window.location.href = "../index.html";
         } catch (error) {
-            console.error("Status:", error.status);
-            console.error("Chi tiết:", error.response);
+            getNewAccessToken();
         }
     });
 });
