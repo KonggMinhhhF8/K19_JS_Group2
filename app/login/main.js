@@ -27,20 +27,39 @@ document.addEventListener("DOMContentLoaded", () => {
         );
     });
 
+    const loginError = document.getElementById("loginError");
+
+    function clearErrors() {
+        emailField.classList.remove("invalid");
+        passField.classList.remove("invalid");
+        loginError.style.display = "none";
+    }
+
+    email.addEventListener("input", clearErrors);
+    password.addEventListener("input", clearErrors);
+
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
+        clearErrors();
+
+        const emailVal = email.value.trim();
+        const passwordVal = password.value.trim();
+
+        let valid = true;
+        if (!emailVal || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+            emailField.classList.add("invalid");
+            valid = false;
+        }
+        if (passwordVal.length < 6) {
+            passField.classList.add("invalid");
+            valid = false;
+        }
+        if (!valid) return;
+
         try {
-            const email = document.getElementById("email").value.trim();
-            const password = document.getElementById("password").value.trim();
-
-            const credentials = {
-                email,
-                password,
-            };
-
             const { accessToken, refreshToken } = await httpRequest.post(
                 "auth/signin",
-                credentials,
+                { email: emailVal, password: passwordVal },
             );
 
             localStorage.setItem("accessToken", accessToken);
@@ -48,7 +67,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             window.location.href = "../index.html";
         } catch (error) {
-            getNewAccessToken();
+            loginError.textContent = "Email hoặc mật khẩu không chính xác.";
+            loginError.style.display = "block";
         }
     });
 });
