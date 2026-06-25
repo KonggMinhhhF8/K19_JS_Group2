@@ -1,3 +1,4 @@
+import getNewAccessToken from "./getNewAccessToken.js";
 class HttpRequest {
     constructor() {
         this.baseUrl =
@@ -27,6 +28,10 @@ class HttpRequest {
             const response = await res.json();
 
             if (!res.ok) {
+                if (res.status === 401) {
+                    await getNewAccessToken();
+                    return await this._send(path, method, data, (options = {}));
+                }
                 const error = new Error(`Http Error: `, res.status);
                 error.response = response;
                 error.status = res.status;
