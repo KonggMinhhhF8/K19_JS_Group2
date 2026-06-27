@@ -1,6 +1,8 @@
 import logout from "../../utils/logout.js";
 import httpRequest from "../../utils/httpRequest.js";
+import authGuard from "../../utils/authGuard.js";
 
+authGuard();
 document.addEventListener("DOMContentLoaded", () => {
     function openModal() {
         document.getElementById("modal").style.display = "flex";

@@ -65,7 +65,9 @@ document.addEventListener("DOMContentLoaded", () => {
             localStorage.setItem("accessToken", accessToken);
             localStorage.setItem("refreshToken", refreshToken);
 
-            window.location.href = "../index.html";
+            const redirect = localStorage.getItem("redirectAfterLogin");
+            localStorage.removeItem("redirectAfterLogin");
+            window.location.href = redirect || "../index.html";
         } catch (error) {
             loginError.textContent = "Email hoặc mật khẩu không chính xác.";
             loginError.style.display = "block";
