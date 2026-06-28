@@ -361,9 +361,9 @@
       <header>
         <button class="menu-btn" id="menuToggle"><i class="fas fa-bars"></i></button>
         <div class="search-bar">
-          <input type="text" id="search" onkeyup="searchCustomer()" placeholder="Tìm tên, email hoặc số điện thoại">
+          <input type="text" id="search" placeholder="Tìm tên, email hoặc số điện thoại">
         </div>
-        <button class="btn-add" onclick="openModal()">
+        <button class="btn-add" id="addCustomerBtn">
           <i class="fas fa-user-plus"></i> Thêm khách hàng
         </button>
       </header>
@@ -403,71 +403,7 @@
               <th>Thao tác</th>
             </tr>
           </thead>
-          <tbody>
-            <tr>
-              <td>
-                <div class="cust-info">
-                  <div class="avatar" style="background: #ebf5fb; color: #3498db;">NA</div>
-                  <div>
-                    <strong>Nguyễn Anh</strong><br>
-                    <small>ID: CUST-001</small>
-                  </div>
-                </div>
-              </td>
-              <td>anh.nguyen@email.com<br><small>0912.345.xxx</small></td>
-              <td><span class="tier gold">VÀNG</span></td>
-              <td>25</td>
-              <td><strong>45.200.000đ</strong></td>
-              <td>
-                <button class="btn-action" title="Lịch sử mua hàng"><i class="fas fa-history"></i></button>
-                <button class="btn-action" onclick="editCustomer(this)" title="Sửa">
-                  <i class="fas fa-user-edit"></i>
-                </button>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div class="cust-info">
-                  <div class="avatar" style="background: #fdf2e9; color: #e67e22;">TL</div>
-                  <div>
-                    <strong>Trần Lan</strong><br>
-                    <small>ID: CUST-002</small>
-                  </div>
-                </div>
-              </td>
-              <td>lan.tran@email.com<br><small>0988.777.xxx</small></td>
-              <td><span class="tier silver">BẠC</span></td>
-              <td>12</td>
-              <td><strong>18.500.000đ</strong></td>
-              <td>
-                <button class="btn-action" title="Lịch sử mua hàng"><i class="fas fa-history"></i></button>
-                <button class="btn-action" onclick="editCustomer(this)" title="Sửa">
-                  <i class="fas fa-user-edit"></i>
-                </button>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div class="cust-info">
-                  <div class="avatar" style="background: #f4f6f7; color: #7f8c8d;">VD</div>
-                  <div>
-                    <strong>Vũ Duy</strong><br>
-                    <small>ID: CUST-003</small>
-                  </div>
-                </div>
-              </td>
-              <td>duy.vu@email.com<br><small>0355.999.xxx</small></td>
-              <td><span class="tier bronze">ĐỒNG</span></td>
-              <td>3</td>
-              <td><strong>2.100.000đ</strong></td>
-              <td>
-                <button class="btn-action" title="Lịch sử mua hàng"><i class="fas fa-history"></i></button>
-                <button class="btn-action" onclick="editCustomer(this)" title="Sửa">
-                  <i class="fas fa-user-edit"></i>
-                </button>
-              </td>
-            </tr>
-          </tbody>
+          <tbody></tbody>
         </table>
       </section>
     </main>
@@ -487,32 +423,10 @@
         <option value="silver">Bạc</option>
         <option value="bronze">Đồng</option>
       </select>
-      <button onclick="addCustomer()" style="margin-top:10px;">Lưu</button>
-      <button onclick="closeModal()">Hủy</button>
+      <button id="saveCustomerBtn" style="margin-top:10px;">Lưu</button>
+      <button id="cancelModalBtn">Hủy</button>
     </div>
   </div>
-  <script>
-    function openModal() {
-      document.getElementById("modal").style.display = "flex";
-    }
-
-    function closeModal() {
-      document.getElementById("modal").style.display = "none";
-    }
-
-    const menuToggle = document.getElementById('menuToggle');
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
-
-    function toggleMenu() {
-      sidebar.classList.toggle('active');
-      overlay.classList.toggle('active');
-    }
-
-    menuToggle.addEventListener('click', toggleMenu);
-    overlay.addEventListener('click', toggleMenu);
-  </script>
-
   <script type="module" src="./main.js"></script>
 
 </body>
