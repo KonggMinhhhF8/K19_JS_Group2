@@ -2,7 +2,7 @@ import getNewAccessToken from "./getNewAccessToken.js";
 class HttpRequest {
     constructor() {
         this.baseUrl =
-            "https://wo365ovs53.execute-api.ap-southeast-1.amazonaws.com/";
+            "https://wo365ovs53.execute-api.ap-southeast-1.amazonaws.com";
     }
 
     async _send(path, method, data, options = {}) {
