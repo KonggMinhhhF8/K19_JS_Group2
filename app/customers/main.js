@@ -3,10 +3,13 @@ import httpRequest from "../../utils/httpRequest.js";
 import authGuard from "../../utils/authGuard.js";
 
 authGuard();
+
+const tierText = { gold: "VÀNG", silver: "BẠC", bronze: "ĐỒNG" };
 let editRow = null;
 
 function handleEditClick(tr) {
     editRow = tr;
+
     const name = tr.querySelector("strong").textContent;
     const email = tr.children[1].childNodes[0].textContent.trim();
     const phone = tr.children[1].querySelector("small").textContent;
@@ -19,7 +22,6 @@ function handleEditClick(tr) {
 
     document.getElementById("modal").style.display = "flex";
 }
-const tierText = { gold: "VÀNG", silver: "BẠC", bronze: "ĐỒNG" };
 
 function renderCustomerRow(customer, orderCount = 0, totalSpending = 0) {
     const tbody = document.querySelector("tbody");
@@ -59,15 +61,16 @@ function renderCustomerRow(customer, orderCount = 0, totalSpending = 0) {
     // Cột 3: Hạng
     const tdTier = document.createElement("td");
     const tierSpan = document.createElement("span");
-    const rankKey = customer.rank.toLowerCase(); // "GOLD" → "gold"
+    const rankKey = (customer.rank ?? "bronze").toLowerCase();
     tierSpan.className = `tier ${rankKey}`;
     tierSpan.textContent = tierText[rankKey];
     tdTier.appendChild(tierSpan);
 
-    // Cột 4 & 5
+    // Cột 4: Số đơn hàng
     const tdOrders = document.createElement("td");
     tdOrders.textContent = orderCount;
 
+    // Cột 5: Tổng chi tiêu
     const tdSpending = document.createElement("td");
     const boldSpending = document.createElement("strong");
     boldSpending.textContent = totalSpending.toLocaleString("vi-VN") + "đ";
@@ -75,6 +78,7 @@ function renderCustomerRow(customer, orderCount = 0, totalSpending = 0) {
 
     // Cột 6: Thao tác
     const tdAction = document.createElement("td");
+
     const historyBtn = document.createElement("button");
     historyBtn.className = "btn-action";
     historyBtn.title = "Lịch sử mua hàng";
@@ -98,6 +102,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function closeModal() {
+        editRow = null;
         document.getElementById("modal").style.display = "none";
     }
 
@@ -115,15 +120,21 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             if (editRow) {
                 const customerId = editRow.dataset.id;
-                const update = await httpRequest.put(
-                    `/customers/${customerId}`,
-                    {
-                        name,
-                        email,
-                        phone,
-                        rank: tier.toUpperCase(),
-                    },
-                );
+                const updated = await httpRequest.put(`customers/${customerId}`, {
+                    name,
+                    email,
+                    phone,
+                    rank: tier.toUpperCase(),
+                });
+
+                editRow.querySelector(".avatar").textContent = updated.name
+                    .trim()
+                    .split(" ")
+                    .map((w) => w[0])
+                    .join("")
+                    .toUpperCase();
+                editRow.querySelector("strong").textContent = updated.name;
+
                 const contact = editRow.children[1];
                 contact.childNodes[0].textContent = updated.email;
                 contact.querySelector("small").textContent = updated.phone;
@@ -132,10 +143,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 const rankKey = updated.rank.toLowerCase();
                 tierSpan.className = `tier ${rankKey}`;
                 tierSpan.textContent = tierText[rankKey];
-
-                editRow = null;
             } else {
-                const newCustomer = await httpRequest.post("/customers", {
+                const newCustomer = await httpRequest.post("customers", {
                     name,
                     email,
                     phone,
@@ -147,70 +156,70 @@ document.addEventListener("DOMContentLoaded", () => {
                 const totalEl = document.getElementById("totalCustomers");
                 totalEl.textContent = parseInt(totalEl.textContent) + 1;
             }
+
+            closeModal();
         } catch (error) {
-            alert("Thêm thất bại: " + error.message);
+            alert("Thao tác thất bại: " + error.message);
         }
-    }
-
-    let editRow = null;
-    function editCustomer(btn) {
-        editRow = btn.closest("tr");
-
-        const name = editRow.querySelector("strong").innerText;
-        const email = editRow.children[1].childNodes[0].textContent.trim();
-        const phone = editRow.children[1].querySelector("small").innerText;
-        const tier = editRow.querySelector(".tier").classList[1];
-
-        document.getElementById("name").value = name;
-        document.getElementById("email").value = email;
-        document.getElementById("phone").value = phone;
-        document.getElementById("tier").value = tier;
-        openModal();
     }
 
     function searchCustomer() {
         const keyword = document.getElementById("search").value.toLowerCase();
         const rows = document.querySelectorAll("tbody tr");
-
         rows.forEach((row) => {
             const text = row.innerText.toLowerCase();
             row.style.display = text.includes(keyword) ? "" : "none";
         });
     }
 
-    const logoutBtn = document.getElementById("logoutBtn");
-    logoutBtn.addEventListener("click", logout);
-});
+    document.getElementById("addCustomerBtn").addEventListener("click", openModal);
+    document.getElementById("saveCustomerBtn").addEventListener("click", addCustomer);
+    document.getElementById("cancelModalBtn").addEventListener("click", closeModal);
+    document.getElementById("search").addEventListener("keyup", searchCustomer);
 
-// DOM
-document.addEventListener("DOMContentLoaded", async () => {
-    const [customers, orders] = await Promise.all([
-        httpRequest.get("/customers"),
-        httpRequest.get("/orders"),
-    ]);
+    const menuToggle = document.getElementById("menuToggle");
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("overlay");
 
-    const ordersByCustomer = {};
-
-    for (const order of orders) {
-        const cid = order.customer.id;
-        if (!ordersByCustomer[cid]) {
-            ordersByCustomer[cid] = [];
-        }
-        ordersByCustomer[cid].push(order);
+    function toggleMenu() {
+        sidebar.classList.toggle("active");
+        overlay.classList.toggle("active");
     }
 
-    const totalCustomers = document.getElementById("totalCustomers");
-    totalCustomers.innerText = `${customers.length}`;
+    menuToggle.addEventListener("click", toggleMenu);
+    overlay.addEventListener("click", toggleMenu);
 
-    const tbody = document.querySelector("tbody");
-    for (const customer of customers) {
-        const myOrders = ordersByCustomer[customer.id] ?? [];
-        const orderCount = myOrders.length;
-        const totalSpending = myOrders.reduce(
-            (sum, o) => sum + o.amount * o.product.price,
-            0,
-        );
+    document.getElementById("logoutBtn").addEventListener("click", logout);
+});
 
-        renderCustomerRow(customer, orderCount, totalSpending);
+document.addEventListener("DOMContentLoaded", async () => {
+    try {
+        const [customers, orders] = await Promise.all([
+            httpRequest.get("customers"),
+            httpRequest.get("orders"),
+        ]);
+
+        const ordersByCustomer = {};
+        for (const order of orders) {
+            const cid = order.customer.id;
+            if (!ordersByCustomer[cid]) {
+                ordersByCustomer[cid] = [];
+            }
+            ordersByCustomer[cid].push(order);
+        }
+
+        document.getElementById("totalCustomers").innerText = customers.length;
+
+        for (const customer of customers) {
+            const myOrders = ordersByCustomer[customer.id] ?? [];
+            const orderCount = myOrders.length;
+            const totalSpending = myOrders.reduce(
+                (sum, o) => sum + o.amount * o.product.price,
+                0,
+            );
+            renderCustomerRow(customer, orderCount, totalSpending);
+        }
+    } catch (error) {
+        alert("Không thể tải dữ liệu: " + error.message);
     }
 });
