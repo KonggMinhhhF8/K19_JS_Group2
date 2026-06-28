@@ -11,7 +11,7 @@ const getNewAccessToken = async () => {
     try {
         const { accessToken, refreshToken } = await httpRequest.post(
             "auth/refresh-token",
-            refreshToken,
+            { refreshToken },
         );
         localStorage.setItem("accessToken", accessToken);
         localStorage.setItem("refreshToken", refreshToken);
