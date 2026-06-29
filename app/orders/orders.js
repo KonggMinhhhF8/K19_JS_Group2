@@ -1,14 +1,43 @@
 const API_URL = 'https://wo365ovs53.execute-api.ap-southeast-1.amazonaws.com';
+let allOrders = [];
+let currentFilter = 'all'; // 'all', 'pending', 'delivering', 'done'
+let searchQuery = '';
 
 document.addEventListener('DOMContentLoaded', () => {
     fetchOrders();
+
+    // Event listener for search
+    const searchInput = document.querySelector('.search-bar input');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            searchQuery = e.target.value.toLowerCase().trim();
+            filterAndRenderOrders();
+        });
+    }
+
+    // Event listeners for tabs
+    const tabs = document.querySelectorAll('.tab');
+    tabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => {
+            // Remove active class from all
+            tabs.forEach(t => t.classList.remove('active'));
+            // Add active class to clicked
+            tab.classList.add('active');
+            
+            // Map index to status
+            if (index === 0) currentFilter = 'all';
+            else if (index === 1) currentFilter = 'pending';
+            else if (index === 2) currentFilter = 'delivering';
+            else if (index === 3) currentFilter = 'done';
+            
+            filterAndRenderOrders();
+        });
+    });
 });
 
 async function fetchOrders() {
     try {
-        // Retrieve token if you have implemented auth, otherwise pass empty or mock.
         const token = localStorage.getItem('accessToken') || '';
-        
         const response = await fetch(`${API_URL}/orders`, {
             method: 'GET',
             headers: {
@@ -21,17 +50,39 @@ async function fetchOrders() {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const orders = await response.json();
-        renderOrders(orders);
-        updateStats(orders);
+        allOrders = await response.json();
+        updateStats(allOrders);
+        filterAndRenderOrders();
     } catch (error) {
         console.error('Lỗi khi tải danh sách đơn hàng:', error);
         alert('Không thể tải danh sách đơn hàng. Vui lòng kiểm tra lại kết nối hoặc đăng nhập.');
     }
 }
 
+function filterAndRenderOrders() {
+    let filtered = allOrders;
+
+    // Filter by tab status
+    if (currentFilter !== 'all') {
+        filtered = filtered.filter(o => o.status === currentFilter);
+    }
+
+    // Filter by search query (order ID or customer name)
+    if (searchQuery !== '') {
+        filtered = filtered.filter(o => {
+            const idMatch = `ord-${o.id}`.includes(searchQuery);
+            const nameMatch = (o.customer?.name || '').toLowerCase().includes(searchQuery);
+            return idMatch || nameMatch;
+        });
+    }
+
+    renderOrders(filtered);
+}
+
 function renderOrders(orders) {
-    const tbody = document.querySelector('tbody');
+    const tbody = document.querySelector('#order-list');
+    if (!tbody) return;
+    
     tbody.innerHTML = '';
 
     if (orders.length === 0) {
@@ -49,7 +100,6 @@ function renderOrders(orders) {
 
         const statusInfo = statusMap[order.status] || { label: order.status, class: 'pending' };
         
-        // Calculate total if amount and product price exist, otherwise 0
         const price = order.product?.price || 0;
         const total = price * (order.amount || 1);
         
@@ -61,6 +111,7 @@ function renderOrders(orders) {
             <td>${total.toLocaleString('vi-VN')}đ</td>
             <td><span class="badge ${statusInfo.class}">${statusInfo.label}</span></td>
             <td>
+                <button class="btn-action" title="Xem chi tiết" onclick="viewOrder(${order.id})"><i class="fas fa-eye"></i></button>
                 <button class="btn-action" title="Sửa" onclick="editOrder(${order.id})"><i class="fas fa-edit"></i></button>
                 <button class="btn-action" title="Xóa" onclick="deleteOrder(${order.id})"><i class="fas fa-trash"></i></button>
             </td>
@@ -88,6 +139,11 @@ function editOrder(id) {
     window.location.href = `order-form.html?id=${id}`;
 }
 
+function viewOrder(id) {
+    // Navigate to a details page or show modal
+    window.location.href = `order-details.html?id=${id}`;
+}
+
 async function deleteOrder(id) {
     if (!confirm('Bạn có chắc chắn muốn xóa đơn hàng này?')) return;
     
@@ -104,7 +160,6 @@ async function deleteOrder(id) {
             throw new Error('Lỗi khi xóa đơn hàng');
         }
         
-        // Reload list after delete
         fetchOrders();
     } catch (error) {
         console.error('Lỗi khi xóa:', error);
