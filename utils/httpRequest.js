@@ -3,6 +3,16 @@ class HttpRequest {
     constructor() {
         this.baseUrl =
             "https://wo365ovs53.execute-api.ap-southeast-1.amazonaws.com/";
+        this._refreshPromise = null;
+    }
+
+    _refreshToken() {
+        if (!this._refreshPromise) {
+            this._refreshPromise = getNewAccessToken().finally(() => {
+                this._refreshPromise = null;
+            });
+        }
+        return this._refreshPromise;
     }
 
     async _send(path, method, data, options = {}) {
@@ -21,7 +31,7 @@ class HttpRequest {
             }
 
             const accessToken = localStorage.getItem("accessToken");
-            if (accessToken) {
+            if (accessToken && !path.startsWith("auth/")) {
                 _options.headers.Authorization = `Bearer ${accessToken}`;
             }
             const res = await fetch(`${this.baseUrl}${path}`, _options);
@@ -29,10 +39,10 @@ class HttpRequest {
 
             if (!res.ok) {
                 if (res.status === 401) {
-                    await getNewAccessToken();
-                    return await this._send(path, method, data, (options = {}));
+                    await this._refreshToken();
+                    return await this._send(path, method, data, options);
                 }
-                const error = new Error(`Http Error: `, res.status);
+                const error = new Error(`Http Error: ${res.status}`);
                 error.response = response;
                 error.status = res.status;
                 throw error;
