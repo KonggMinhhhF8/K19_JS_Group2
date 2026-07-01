@@ -5,13 +5,13 @@ import { renderCustomerRow, createStatCard } from "./render.js";
 import { router } from "../router.js";
 
 export function mount(el) {
-    if (!localStorage.getItem("refreshToken")) {
-        localStorage.setItem("redirectAfterLogin", "/customers");
-        router.navigate("/login");
-        return;
-    }
+  if (!localStorage.getItem("refreshToken")) {
+    localStorage.setItem("redirectAfterLogin", "/customers");
+    router.navigate("/login");
+    return;
+  }
 
-    el.innerHTML = `
+  el.innerHTML = `
         <style>
             :root {
                 --primary-color: #3498db;
@@ -155,115 +155,120 @@ export function mount(el) {
         </div>
     `;
 
-    // Nút "Thêm khách hàng"
-    el.querySelector("#addCustomerBtn").addEventListener("click", function () {
-        const modal = createModal("Thêm khách hàng", null);
+  // Nút "Thêm khách hàng"
+  el.querySelector("#addCustomerBtn").addEventListener("click", function () {
+    const modal = createModal("Thêm khách hàng", null);
 
-        modal.saveBtn.addEventListener("click", async function () {
-            const name = modal.nameInput.value.trim();
-            const email = modal.emailInput.value.trim();
-            const phone = modal.phoneInput.value.trim();
-            const tier = modal.tierSelect.value;
+    modal.saveBtn.addEventListener("click", async function () {
+      const name = modal.nameInput.value.trim();
+      const email = modal.emailInput.value.trim();
+      const phone = modal.phoneInput.value.trim();
+      const tier = modal.tierSelect.value;
 
-            if (!name || !email || !phone) {
-                alert("Vui lòng nhập đầy đủ thông tin");
-                return;
-            }
+      if (!name || !email || !phone) {
+        alert("Vui lòng nhập đầy đủ thông tin");
+        return;
+      }
 
-            try {
-                const newCustomer = await httpRequest.post("customers", {
-                    name,
-                    email,
-                    phone,
-                    rank: tier.toUpperCase(),
-                });
-
-                renderCustomerRow(newCustomer);
-
-                const totalEl = document.getElementById("totalCustomers");
-                totalEl.textContent = parseInt(totalEl.textContent) + 1;
-
-                modal.closeModal();
-            } catch (error) {
-                alert("Thêm khách hàng thất bại: " + error.message);
-            }
+      try {
+        const newCustomer = await httpRequest.post("customers", {
+          name,
+          email,
+          phone,
+          rank: tier.toUpperCase(),
         });
+
+        renderCustomerRow(newCustomer);
+
+        const totalEl = document.getElementById("totalCustomers");
+        totalEl.textContent = parseInt(totalEl.textContent) + 1;
+
+        modal.closeModal();
+      } catch (error) {
+        alert("Thêm khách hàng thất bại: " + error.message);
+      }
     });
+  });
 
-    // Tìm kiếm theo tên / email
-    function searchCustomer() {
-        const keyword = el.querySelector("#search").value.toLowerCase();
-        el.querySelectorAll("tbody tr").forEach((row) => {
-            const name = row.querySelector("strong").textContent.toLowerCase();
-            const email = row.children[1].childNodes[0].textContent.toLowerCase();
-            row.style.display = name.includes(keyword) || email.includes(keyword) ? "" : "none";
-        });
-    }
-
-    // Lọc theo hạng
-    function filterByTier() {
-        const tier = el.querySelector("#tierFilter").value;
-        el.querySelectorAll("tbody tr").forEach((row) => {
-            row.style.display = !tier || row.querySelector(`.tier.${tier}`) ? "" : "none";
-        });
-    }
-
-    el.querySelector("#search").addEventListener("keyup", searchCustomer);
-    el.querySelector("#tierFilter").addEventListener("change", filterByTier);
-
-    // Sidebar toggle (mobile)
-    const sidebar = el.querySelector("#sidebar");
-    const overlay = el.querySelector("#overlay");
-    function toggleMenu() {
-        sidebar.classList.toggle("active");
-        overlay.classList.toggle("active");
-    }
-    el.querySelector("#menuToggle").addEventListener("click", toggleMenu);
-    overlay.addEventListener("click", toggleMenu);
-
-    // Đăng xuất
-    el.querySelector("#logoutBtn").addEventListener("click", () => {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        router.navigate("/login");
+  // Tìm kiếm theo tên / email
+  function searchCustomer() {
+    const keyword = el.querySelector("#search").value.toLowerCase();
+    el.querySelectorAll("tbody tr").forEach((row) => {
+      const name = row.querySelector("strong").textContent.toLowerCase();
+      const email = row.children[1].childNodes[0].textContent.toLowerCase();
+      row.style.display =
+        name.includes(keyword) || email.includes(keyword) ? "" : "none";
     });
+  }
 
-    // Fetch data và render
-    async function loadData() {
-        const [customers, orders] = await Promise.all([
-            httpRequest.get("customers"),
-            httpRequest.get("orders"),
-        ]);
+  // Lọc theo hạng
+  function filterByTier() {
+    const tier = el.querySelector("#tierFilter").value;
+    el.querySelectorAll("tbody tr").forEach((row) => {
+      row.style.display =
+        !tier || row.querySelector(`.tier.${tier}`) ? "" : "none";
+    });
+  }
 
-        const ordersByCustomer = {};
-        for (const order of orders) {
-            const cid = order.customer.id;
-            if (!ordersByCustomer[cid]) ordersByCustomer[cid] = [];
-            ordersByCustomer[cid].push(order);
-        }
+  el.querySelector("#search").addEventListener("keyup", searchCustomer);
+  el.querySelector("#tierFilter").addEventListener("change", filterByTier);
 
-        const statsSection = el.querySelector("#statsSection");
-        statsSection.innerHTML = "";
-        statsSection.append(
-            createStatCard("Tổng khách hàng", customers.length, "totalCustomers"),
-            createStatCard("Khách hàng mới (Tháng)", 42),
-            createStatCard("Tỉ lệ quay lại", "65%")
-        );
+  // Sidebar toggle (mobile)
+  const sidebar = el.querySelector("#sidebar");
+  const overlay = el.querySelector("#overlay");
+  function toggleMenu() {
+    sidebar.classList.toggle("active");
+    overlay.classList.toggle("active");
+  }
+  el.querySelector("#menuToggle").addEventListener("click", toggleMenu);
+  overlay.addEventListener("click", toggleMenu);
 
-        el.querySelector("tbody").innerHTML = "";
-        for (const customer of customers) {
-            const myOrders = ordersByCustomer[customer.id] ?? [];
-            const totalSpending = myOrders.reduce((sum, o) => sum + o.amount * o.product.price, 0);
-            renderCustomerRow(customer, myOrders.length, totalSpending);
-        }
+  // Đăng xuất
+  el.querySelector("#logoutBtn").addEventListener("click", () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    router.navigate("/login");
+  });
+
+  // Fetch data và render
+  async function loadData() {
+    const [customers, orders] = await Promise.all([
+      httpRequest.get("customers"),
+      httpRequest.get("orders"),
+    ]);
+
+    const ordersByCustomer = {};
+    for (const order of orders) {
+      const cid = order.customer.id;
+      if (!ordersByCustomer[cid]) ordersByCustomer[cid] = [];
+      ordersByCustomer[cid].push(order);
     }
 
-    (async () => {
-        try {
-            await loadData();
-        } catch (error) {
-            await getNewAccessToken();
-            await loadData();
-        }
-    })();
+    const statsSection = el.querySelector("#statsSection");
+    statsSection.innerHTML = "";
+    statsSection.append(
+      createStatCard("Tổng khách hàng", customers.length, "totalCustomers"),
+      createStatCard("Khách hàng mới (Tháng)", 42),
+      createStatCard("Tỉ lệ quay lại", "65%"),
+    );
+
+    el.querySelector("tbody").innerHTML = "";
+    for (const customer of customers) {
+      const myOrders = ordersByCustomer[customer.id] ?? [];
+      const totalSpending = myOrders.reduce(
+        (sum, o) => sum + o.amount * o.product.price,
+        0,
+      );
+      renderCustomerRow(customer, myOrders.length, totalSpending);
+    }
+  }
+
+  (async () => {
+    try {
+      await loadData();
+    } catch (error) {
+      await getNewAccessToken();
+      await loadData();
+    }
+  })();
 }
