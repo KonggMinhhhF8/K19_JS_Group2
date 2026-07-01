@@ -37,13 +37,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function fetchOrders() {
     try {
-        const token = localStorage.getItem('accessToken') || '';
-        const response = await fetch(`${API_URL}/orders`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
+        const response = await fetchWithAuth('/orders', {
+            method: 'GET'
         });
 
         if (!response.ok) {
@@ -51,12 +46,12 @@ async function fetchOrders() {
         }
 
         allOrders = await response.json();
-        updateStats(allOrders);
-        filterAndRenderOrders();
     } catch (error) {
         console.error('Lỗi khi tải danh sách đơn hàng:', error);
-        alert('Không thể tải danh sách đơn hàng. Vui lòng kiểm tra lại kết nối hoặc đăng nhập.');
+        allOrders = [];
     }
+    updateStats(allOrders);
+    filterAndRenderOrders();
 }
 
 function filterAndRenderOrders() {
@@ -148,12 +143,8 @@ async function deleteOrder(id) {
     if (!confirm('Bạn có chắc chắn muốn xóa đơn hàng này?')) return;
     
     try {
-        const token = localStorage.getItem('accessToken') || '';
-        const response = await fetch(`${API_URL}/orders/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+        const response = await fetchWithAuth(`/orders/${id}`, {
+            method: 'DELETE'
         });
 
         if (!response.ok) {

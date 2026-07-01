@@ -19,12 +19,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadOrderDetails(id) {
     try {
-        const token = localStorage.getItem('accessToken') || '';
+        const token = localStorage.getItem('accessToken') || 'mock_token';
         
         // Fetch all orders and find since GET /orders/{id} is not in API
-        const response = await fetch(`${API_URL}/orders`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const response = await fetchWithAuth('/orders');
         
         if (!response.ok) throw new Error('Failed to load orders');
         
@@ -39,8 +37,9 @@ async function loadOrderDetails(id) {
 
         renderDetails(order);
     } catch (error) {
-        console.error(error);
-        alert('Lỗi khi tải thông tin chi tiết đơn hàng.');
+        console.error('Lỗi khi tải thông tin chi tiết đơn hàng:', error);
+        alert('Không tìm thấy đơn hàng!');
+        window.location.href = 'index.html';
     }
 }
 
