@@ -23,7 +23,6 @@ body {
     min-height: 100vh;
 }
 
-/* Sidebar (Giữ nguyên phong cách các trang trước) */
 .sidebar {
     width: 260px;
     background: var(--dark-color);
