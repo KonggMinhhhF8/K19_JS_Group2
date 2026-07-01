@@ -25,7 +25,7 @@ const getNewAccessToken = async () => {
     } catch (error) {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
-        window.location.href = "../login/index.html";
+        window.location.href = "/#/login";
     }
 };
 

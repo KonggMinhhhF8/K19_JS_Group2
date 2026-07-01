@@ -1,416 +1,235 @@
-import logout from "../../utils/logout.js";
 import httpRequest from "../../utils/httpRequest.js";
-import authGuard from "../../utils/authGuard.js";
 import getNewAccessToken from "../../utils/getNewAccessToken.js";
+import { createModal } from "./modal.js";
+import { renderCustomerRow, createStatCard } from "./render.js";
+import { router } from "../router.js";
 
-authGuard();
-
-const tierText = { gold: "VÀNG", silver: "BẠC", bronze: "ĐỒNG" };
-
-// title: tiêu đề hiển thị ("Thêm khách hàng" hoặc "Sửa khách hàng")
-// customer: null nếu thêm mới, object nếu sửa (để điền sẵn thông tin)
-function createModal(title, customer) {
-    // Tạo nền mờ bên ngoài
-    const backdrop = document.createElement("div");
-    backdrop.id = "modal";
-    backdrop.style.cssText = `
-        position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background: rgba(0, 0, 0, 0.45);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-    `;
-
-    // Tạo hộp modal bên trong
-    const box = document.createElement("div");
-    box.style.cssText = `
-        background: white;
-        padding: 32px 28px 24px;
-        border-radius: 16px;
-        width: 380px;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-    `;
-
-    // Style chung cho input và select
-    const fieldStyle = `
-        width: 100%;
-        padding: 10px 14px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        font-size: 0.95rem;
-        outline: none;
-        transition: border-color 0.2s;
-        box-sizing: border-box;
-    `;
-
-    // Tiêu đề
-    const h3 = document.createElement("h3");
-    h3.id = "modalTitle";
-    h3.textContent = title;
-    h3.style.cssText = `
-        margin: 0 0 4px;
-        font-size: 1.2rem;
-        color: #2c3e50;
-    `;
-
-    // Đường kẻ phân cách dưới tiêu đề
-    const divider = document.createElement("hr");
-    divider.style.cssText =
-        "border: none; border-top: 1px solid #eee; margin: 0;";
-
-    // Các ô nhập liệu
-    const nameInput = document.createElement("input");
-    nameInput.id = "name";
-    nameInput.placeholder = "Họ và tên";
-    nameInput.value = customer ? customer.name : "";
-    nameInput.style.cssText = fieldStyle;
-
-    const emailInput = document.createElement("input");
-    emailInput.id = "email";
-    emailInput.type = "email";
-    emailInput.placeholder = "Địa chỉ email";
-    emailInput.value = customer ? customer.email : "";
-    emailInput.style.cssText = fieldStyle;
-
-    const phoneInput = document.createElement("input");
-    phoneInput.id = "phone";
-    phoneInput.placeholder = "Số điện thoại";
-    phoneInput.value = customer ? customer.phone : "";
-    phoneInput.style.cssText = fieldStyle;
-
-    const tierSelect = document.createElement("select");
-    tierSelect.id = "tier";
-    tierSelect.style.cssText =
-        fieldStyle + "cursor: pointer; background: white;";
-    tierSelect.innerHTML = `
-        <option value="gold">Hạng Vàng</option>
-        <option value="silver">Hạng Bạc</option>
-        <option value="bronze">Hạng Đồng</option>
-    `;
-    tierSelect.value = customer ? customer.rank.toLowerCase() : "gold";
-
-    // Nhóm nút bấm
-    const btnGroup = document.createElement("div");
-    btnGroup.style.cssText = "display: flex; gap: 10px; margin-top: 4px;";
-
-    // Nút Lưu
-    const saveBtn = document.createElement("button");
-    saveBtn.id = "saveCustomerBtn";
-    saveBtn.textContent = "Lưu";
-    saveBtn.style.cssText = `
-        flex: 1;
-        padding: 10px;
-        background: #3498db;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        font-size: 0.95rem;
-        font-weight: 600;
-        cursor: pointer;
-    `;
-
-    // Nút Hủy
-    const cancelBtn = document.createElement("button");
-    cancelBtn.id = "cancelModalBtn";
-    cancelBtn.textContent = "Hủy";
-    cancelBtn.style.cssText = `
-        flex: 1;
-        padding: 10px;
-        background: #f0f2f5;
-        color: #555;
-        border: none;
-        border-radius: 8px;
-        font-size: 0.95rem;
-        font-weight: 600;
-        cursor: pointer;
-    `;
-
-    btnGroup.append(saveBtn, cancelBtn);
-
-    // Hàm đóng modal: xóa backdrop khỏi trang
-    function closeModal() {
-        document.body.removeChild(backdrop);
+export function mount(el) {
+    if (!localStorage.getItem("refreshToken")) {
+        localStorage.setItem("redirectAfterLogin", "/customers");
+        router.navigate("/login");
+        return;
     }
 
-    // Bấm Hủy → đóng modal
-    cancelBtn.addEventListener("click", closeModal);
+    el.innerHTML = `
+        <style>
+            :root {
+                --primary-color: #3498db;
+                --dark-color: #2c3e50;
+                --bg-color: #f4f7f6;
+                --gold: #f1c40f;
+                --silver: #95a5a6;
+                --bronze: #d35400;
+            }
 
-    // Bấm ngoài backdrop → đóng modal
-    backdrop.addEventListener("click", function (e) {
-        if (e.target === backdrop) closeModal();
-    });
+            body { background-color: var(--bg-color); display: block; }
 
-    // Gắn các phần tử vào box, box vào backdrop, backdrop vào trang
-    box.append(
-        h3,
-        divider,
-        nameInput,
-        emailInput,
-        phoneInput,
-        tierSelect,
-        btnGroup,
-    );
-    backdrop.appendChild(box);
-    document.body.appendChild(backdrop);
+            .container { display: flex; min-height: 100vh; }
 
-    // Trả về để hàm bên ngoài có thể đọc giá trị và đóng modal
-    return {
-        nameInput,
-        emailInput,
-        phoneInput,
-        tierSelect,
-        saveBtn,
-        closeModal,
-    };
-}
+            .sidebar {
+                width: 260px; background: var(--dark-color); color: white;
+                padding: 25px; position: fixed; top: 0; left: 0; height: 100vh;
+                z-index: 1000; transition: 0.3s; display: flex; flex-direction: column;
+            }
+            .sidebar h2 { margin-bottom: 40px; text-align: center; color: var(--primary-color); }
+            .sidebar ul { list-style: none; }
+            .sidebar ul li { padding: 15px; cursor: pointer; border-radius: 8px; margin-bottom: 5px; color: #ecf0f1; transition: 0.3s; }
+            .sidebar ul li:hover, .sidebar ul li.active { background: #34495e; color: var(--primary-color); }
+            .sidebar ul li a { color: inherit; text-decoration: none; display: block; }
+            .sidebar ul li i { margin-right: 12px; width: 20px; }
 
-function handleEditClick(tr) {
-    // Đọc dữ liệu hiện tại từ hàng đang chọn
-    const customer = {
-        name: tr.querySelector("strong").textContent,
-        email: tr.children[1].childNodes[0].textContent.trim(),
-        phone: tr.children[1].querySelector("small").textContent,
-        rank: tr.querySelector(".tier").classList[1],
-    };
+            .menu-btn { display: none; background: none; border: none; font-size: 1.4rem; cursor: pointer; }
 
-    // Tạo modal sửa, điền sẵn thông tin cũ
-    const modal = createModal("Sửa khách hàng", customer);
+            .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; }
+            .overlay.active { display: block; }
 
-    modal.saveBtn.addEventListener("click", async function () {
-        const name = modal.nameInput.value.trim();
-        const email = modal.emailInput.value.trim();
-        const phone = modal.phoneInput.value.trim();
-        const tier = modal.tierSelect.value;
+            .main-content { flex: 1; padding: 30px; margin-left: 260px; transition: 0.3s; }
 
-        if (!name || !email || !phone) {
-            alert("Vui lòng nhập đầy đủ thông tin");
-            return;
-        }
+            header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 25px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
 
-        try {
-            const updated = await httpRequest.put(
-                `customers/${tr.dataset.id}`,
-                {
+            .search-bar input { padding: 10px 20px; width: 350px; border: 1px solid #ddd; border-radius: 25px; outline: none; }
+
+            .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+            .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+            .card h3 { font-size: 0.85rem; color: #7f8c8d; text-transform: uppercase; margin-bottom: 10px; }
+            .card p { font-size: 1.8rem; font-weight: bold; color: var(--dark-color); }
+
+            .table-container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow-x: auto; }
+            .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+
+            table { width: 100%; border-collapse: collapse; min-width: 650px; }
+            th { text-align: left; padding: 15px; background: #f8f9fa; color: #666; font-size: 0.9rem; }
+            td { padding: 15px; border-bottom: 1px solid #eee; font-size: 0.95rem; }
+
+            .cust-info { display: flex; align-items: center; gap: 12px; }
+            .avatar { width: 40px; height: 40px; border-radius: 50%; background: #eee; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #7f8c8d; }
+
+            .tier { padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; color: white; }
+            .tier.gold { background: var(--gold); }
+            .tier.silver { background: var(--silver); }
+            .tier.bronze { background: var(--bronze); }
+
+            .btn-add { background: var(--primary-color); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+            .btn-action { border: none; background: #f0f2f5; padding: 8px; border-radius: 6px; cursor: pointer; color: #555; }
+            .btn-action:hover { background: #e0e0e0; }
+
+            small { color: #7f8c8d; }
+
+            .logout-btn {
+                margin-top: auto; padding: 12px; cursor: pointer; border-radius: 8px;
+                display: flex; align-items: center; color: #e74c3c;
+                background: transparent; border: none; width: 100%; font-size: 1rem;
+                text-align: left; transition: 0.2s;
+                border-top: 1px solid rgba(255,255,255,0.1); padding-top: 18px;
+            }
+            .logout-btn i { margin-right: 15px; }
+            .logout-btn:hover { background: rgba(231, 76, 60, 0.15); }
+
+            @media (max-width: 992px) {
+                .sidebar { left: -100%; }
+                .sidebar.active { left: 0; }
+                .main-content { margin-left: 0; }
+                .menu-btn { display: block; }
+            }
+            @media (max-width: 600px) {
+                .stats { grid-template-columns: repeat(2, 1fr); }
+                .search-bar input { width: 200px; }
+                header { flex-wrap: wrap; gap: 10px; }
+            }
+        </style>
+
+        <div class="overlay" id="overlay"></div>
+        <div class="container">
+            <aside class="sidebar" id="sidebar">
+                <h2>ShopAdmin</h2>
+                <ul>
+                    <li><a href="#/home"><i class="fas fa-home"></i> Tổng quan</a></li>
+                    <li><a href="#/products"><i class="fas fa-box"></i> Sản phẩm</a></li>
+                    <li><a href="#/orders"><i class="fas fa-shopping-cart"></i> Đơn hàng</a></li>
+                    <li class="active"><i class="fas fa-users"></i> Khách hàng</li>
+                    <li><a href="#/reports"><i class="fas fa-chart-line"></i> Báo cáo</a></li>
+                </ul>
+                <button class="logout-btn" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </button>
+            </aside>
+
+            <main class="main-content">
+                <header>
+                    <button class="menu-btn" id="menuToggle"><i class="fas fa-bars"></i></button>
+                    <div class="search-bar">
+                        <input type="text" id="search" placeholder="Tìm tên hoặc email">
+                    </div>
+                    <button class="btn-add" id="addCustomerBtn">
+                        <i class="fas fa-user-plus"></i> Thêm khách hàng
+                    </button>
+                </header>
+
+                <section class="stats" id="statsSection"></section>
+
+                <section class="table-container">
+                    <div class="table-header">
+                        <h3>Danh sách khách hàng</h3>
+                        <select id="tierFilter" style="padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+                            <option value="">Hạng: Tất cả</option>
+                            <option value="gold">Hạng: Vàng</option>
+                            <option value="silver">Hạng: Bạc</option>
+                            <option value="bronze">Hạng: Đồng</option>
+                        </select>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Khách hàng</th>
+                                <th>Liên hệ</th>
+                                <th>Hạng</th>
+                                <th>Đơn hàng</th>
+                                <th>Tổng chi tiêu</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </section>
+            </main>
+        </div>
+    `;
+
+    // Nút "Thêm khách hàng"
+    el.querySelector("#addCustomerBtn").addEventListener("click", function () {
+        const modal = createModal("Thêm khách hàng", null);
+
+        modal.saveBtn.addEventListener("click", async function () {
+            const name = modal.nameInput.value.trim();
+            const email = modal.emailInput.value.trim();
+            const phone = modal.phoneInput.value.trim();
+            const tier = modal.tierSelect.value;
+
+            if (!name || !email || !phone) {
+                alert("Vui lòng nhập đầy đủ thông tin");
+                return;
+            }
+
+            try {
+                const newCustomer = await httpRequest.post("customers", {
                     name,
                     email,
                     phone,
                     rank: tier.toUpperCase(),
-                },
-            );
+                });
 
-            // Cập nhật lại hàng trong bảng
-            tr.querySelector(".avatar").textContent = updated.name
-                .trim()
-                .split(" ")
-                .map((w) => w[0])
-                .join("")
-                .toUpperCase();
-            tr.querySelector("strong").textContent = updated.name;
-            tr.children[1].childNodes[0].textContent = updated.email;
-            tr.children[1].querySelector("small").textContent = updated.phone;
+                renderCustomerRow(newCustomer);
 
-            const tierSpan = tr.querySelector(".tier");
-            const rankKey = updated.rank.toLowerCase();
-            tierSpan.className = `tier ${rankKey}`;
-            tierSpan.textContent = tierText[rankKey];
+                const totalEl = document.getElementById("totalCustomers");
+                totalEl.textContent = parseInt(totalEl.textContent) + 1;
 
-            modal.closeModal();
-        } catch (error) {
-            alert("Cập nhật thất bại: " + error.message);
-        }
-    });
-}
-
-// Tạo 1 thẻ card thống kê với tiêu đề và giá trị
-// id: tùy chọn, dùng khi cần lấy lại element này sau bằng getElementById
-function createStatCard(label, value, id = "") {
-    const card = document.createElement("div");
-    card.className = "card";
-
-    const h3 = document.createElement("h3");
-    h3.textContent = label;
-
-    const p = document.createElement("p");
-    p.textContent = value;
-    if (id) p.id = id;
-
-    card.append(h3, p);
-    return card;
-}
-
-function renderCustomerRow(customer, orderCount = 0, totalSpending = 0) {
-    const tbody = document.querySelector("tbody");
-    const tr = document.createElement("tr");
-    tr.dataset.id = customer.id;
-
-    // Cột 1: Avatar + Tên
-    const tdInfo = document.createElement("td");
-    const custInfo = document.createElement("div");
-    custInfo.className = "cust-info";
-
-    const avatar = document.createElement("div");
-    avatar.className = "avatar";
-    avatar.textContent = customer.name
-        .trim()
-        .split(" ")
-        .map((w) => w[0])
-        .join("")
-        .toUpperCase();
-
-    const nameWrapper = document.createElement("div");
-    const strong = document.createElement("strong");
-    strong.textContent = customer.name;
-    const small = document.createElement("small");
-    small.textContent = `ID: ${customer.id}`;
-    nameWrapper.append(strong, document.createElement("br"), small);
-    custInfo.append(avatar, nameWrapper);
-    tdInfo.appendChild(custInfo);
-
-    // Cột 2: Email + SĐT
-    const tdContact = document.createElement("td");
-    tdContact.textContent = customer.email;
-    const smallPhone = document.createElement("small");
-    smallPhone.textContent = customer.phone;
-    tdContact.append(document.createElement("br"), smallPhone);
-
-    // Cột 3: Hạng
-    const tdTier = document.createElement("td");
-    const tierSpan = document.createElement("span");
-    const rankKey = (customer.rank ?? "bronze").toLowerCase();
-    tierSpan.className = `tier ${rankKey}`;
-    tierSpan.textContent = tierText[rankKey];
-    tdTier.appendChild(tierSpan);
-
-    // Cột 4: Số đơn hàng
-    const tdOrders = document.createElement("td");
-    tdOrders.textContent = orderCount;
-
-    // Cột 5: Tổng chi tiêu
-    const tdSpending = document.createElement("td");
-    const boldSpending = document.createElement("strong");
-    boldSpending.textContent = totalSpending.toLocaleString("vi-VN") + "đ";
-    tdSpending.appendChild(boldSpending);
-
-    // Cột 6: Thao tác
-    const tdAction = document.createElement("td");
-
-    const deleteBtn = document.createElement("button");
-    deleteBtn.className = "btn-action";
-    deleteBtn.title = "Xóa";
-    deleteBtn.innerHTML = `<i class="fas fa-trash"></i>`;
-    deleteBtn.addEventListener("click", async () => {
-        if (!confirm("Bạn có chắc chắn muốn xóa khách hàng này không?")) return;
-
-        try {
-            await httpRequest.del(`customers/${tr.dataset.id}`);
-            tr.remove();
-        } catch (error) {
-            alert("Xóa thất bại: " + error.message);
-        }
-    });
-
-    const editBtn = document.createElement("button");
-    editBtn.className = "btn-action";
-    editBtn.title = "Sửa";
-    editBtn.innerHTML = `<i class="fas fa-user-edit"></i>`;
-    editBtn.addEventListener("click", () => handleEditClick(tr));
-
-    tdAction.append(deleteBtn, editBtn);
-
-    tr.append(tdInfo, tdContact, tdTier, tdOrders, tdSpending, tdAction);
-    tbody.appendChild(tr);
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    // Bấm "Thêm khách hàng" → tạo modal thêm mới
-    document
-        .getElementById("addCustomerBtn")
-        .addEventListener("click", function () {
-            const modal = createModal("Thêm khách hàng", null);
-
-            modal.saveBtn.addEventListener("click", async function () {
-                const name = modal.nameInput.value.trim();
-                const email = modal.emailInput.value.trim();
-                const phone = modal.phoneInput.value.trim();
-                const tier = modal.tierSelect.value;
-
-                if (!name || !email || !phone) {
-                    alert("Vui lòng nhập đầy đủ thông tin");
-                    return;
-                }
-
-                try {
-                    const newCustomer = await httpRequest.post("customers", {
-                        name,
-                        email,
-                        phone,
-                        rank: tier.toUpperCase(),
-                    });
-
-                    renderCustomerRow(newCustomer);
-
-                    const totalEl = document.getElementById("totalCustomers");
-                    totalEl.textContent = parseInt(totalEl.textContent) + 1;
-
-                    modal.closeModal();
-                } catch (error) {
-                    alert("Thêm khách hàng thất bại: " + error.message);
-                }
-            });
-        });
-
-    function searchCustomer() {
-        const keyword = document.getElementById("search").value.toLowerCase();
-        const rows = document.querySelectorAll("tbody tr");
-        rows.forEach((row) => {
-            const text = row.innerText.toLowerCase();
-            row.style.display = text.includes(keyword) ? "" : "none";
-        });
-    }
-
-    function filterByTier() {
-        const tier = document.getElementById("tierFilter").value;
-        const rows = document.querySelectorAll("tbody tr");
-
-        rows.forEach((row) => {
-            if (!tier) {
-                row.style.display = "";
-            } else {
-                const hasTier = row.querySelector(`.tier.${tier}`);
-                row.style.display = hasTier ? "" : "none";
+                modal.closeModal();
+            } catch (error) {
+                alert("Thêm khách hàng thất bại: " + error.message);
             }
         });
+    });
+
+    // Tìm kiếm theo tên / email
+    function searchCustomer() {
+        const keyword = el.querySelector("#search").value.toLowerCase();
+        el.querySelectorAll("tbody tr").forEach((row) => {
+            const name = row.querySelector("strong").textContent.toLowerCase();
+            const email = row.children[1].childNodes[0].textContent.toLowerCase();
+            row.style.display = name.includes(keyword) || email.includes(keyword) ? "" : "none";
+        });
     }
 
-    document.getElementById("search").addEventListener("keyup", searchCustomer);
+    // Lọc theo hạng
+    function filterByTier() {
+        const tier = el.querySelector("#tierFilter").value;
+        el.querySelectorAll("tbody tr").forEach((row) => {
+            row.style.display = !tier || row.querySelector(`.tier.${tier}`) ? "" : "none";
+        });
+    }
 
-    const menuToggle = document.getElementById("menuToggle");
-    const sidebar = document.getElementById("sidebar");
-    const overlay = document.getElementById("overlay");
+    el.querySelector("#search").addEventListener("keyup", searchCustomer);
+    el.querySelector("#tierFilter").addEventListener("change", filterByTier);
 
+    // Sidebar toggle (mobile)
+    const sidebar = el.querySelector("#sidebar");
+    const overlay = el.querySelector("#overlay");
     function toggleMenu() {
         sidebar.classList.toggle("active");
         overlay.classList.toggle("active");
     }
-
-    menuToggle.addEventListener("click", toggleMenu);
+    el.querySelector("#menuToggle").addEventListener("click", toggleMenu);
     overlay.addEventListener("click", toggleMenu);
 
-    document.getElementById("logoutBtn").addEventListener("click", logout);
+    // Đăng xuất
+    el.querySelector("#logoutBtn").addEventListener("click", () => {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        router.navigate("/login");
+    });
 
-    document
-        .getElementById("tierFilter")
-        .addEventListener("change", filterByTier);
-});
-
-document.addEventListener("DOMContentLoaded", async () => {
-    try {
+    // Fetch data và render
+    async function loadData() {
         const [customers, orders] = await Promise.all([
             httpRequest.get("customers"),
             httpRequest.get("orders"),
@@ -419,37 +238,32 @@ document.addEventListener("DOMContentLoaded", async () => {
         const ordersByCustomer = {};
         for (const order of orders) {
             const cid = order.customer.id;
-            if (!ordersByCustomer[cid]) {
-                ordersByCustomer[cid] = [];
-            }
+            if (!ordersByCustomer[cid]) ordersByCustomer[cid] = [];
             ordersByCustomer[cid].push(order);
         }
 
-        const statsSection = document.getElementById("statsSection");
-
-        // Lấy được từ API
-        const card1 = createStatCard(
-            "Tổng khách hàng",
-            customers.length,
-            "totalCustomers",
+        const statsSection = el.querySelector("#statsSection");
+        statsSection.innerHTML = "";
+        statsSection.append(
+            createStatCard("Tổng khách hàng", customers.length, "totalCustomers"),
+            createStatCard("Khách hàng mới (Tháng)", 42),
+            createStatCard("Tỉ lệ quay lại", "65%")
         );
 
-        // Chưa lấy được từ API, tạm để cứng
-        const card2 = createStatCard("Khách hàng mới (Tháng)", 42);
-        const card3 = createStatCard("Tỉ lệ quay lại", "65%");
-
-        statsSection.append(card1, card2, card3);
-
+        el.querySelector("tbody").innerHTML = "";
         for (const customer of customers) {
             const myOrders = ordersByCustomer[customer.id] ?? [];
-            const orderCount = myOrders.length;
-            const totalSpending = myOrders.reduce(
-                (sum, o) => sum + o.amount * o.product.price,
-                0,
-            );
-            renderCustomerRow(customer, orderCount, totalSpending);
+            const totalSpending = myOrders.reduce((sum, o) => sum + o.amount * o.product.price, 0);
+            renderCustomerRow(customer, myOrders.length, totalSpending);
         }
-    } catch (error) {
-        getNewAccessToken();
     }
-});
+
+    (async () => {
+        try {
+            await loadData();
+        } catch (error) {
+            await getNewAccessToken();
+            await loadData();
+        }
+    })();
+}
