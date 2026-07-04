@@ -1,4 +1,10 @@
-const API_URL = 'https://wo365ovs53.execute-api.ap-southeast-1.amazonaws.com';
+import authGuard from "../../utils/authGuard.js";
+import httpRequest from "../../utils/httpRequest.js";
+
+// Run authentication guard
+if (!authGuard()) {
+    throw new Error("Authentication required");
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -19,14 +25,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadOrderDetails(id) {
     try {
-        const token = localStorage.getItem('accessToken') || 'mock_token';
-        
         // Fetch all orders and find since GET /orders/{id} is not in API
-        const response = await fetchWithAuth('/orders');
-        
-        if (!response.ok) throw new Error('Failed to load orders');
-        
-        const orders = await response.json();
+        const orders = await httpRequest.get('orders');
         const order = orders.find(o => o.id == id);
 
         if (!order) {

@@ -1,4 +1,11 @@
-const API_URL = 'https://wo365ovs53.execute-api.ap-southeast-1.amazonaws.com';
+import authGuard from "../../utils/authGuard.js";
+import httpRequest from "../../utils/httpRequest.js";
+
+// Run authentication guard
+if (!authGuard()) {
+    throw new Error("Authentication required");
+}
+
 let productsList = [];
 let isEditMode = false;
 let currentOrderId = null;
@@ -33,15 +40,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('orderForm').addEventListener('submit', handleFormSubmit);
 });
 
-function getToken() {
-    return localStorage.getItem('accessToken') || 'mock_token';
-}
-
 async function fetchCustomers() {
     try {
-        const response = await fetchWithAuth('/customers');
-        if (!response.ok) throw new Error('Failed to load customers');
-        const customers = await response.json();
+        const customers = await httpRequest.get('customers');
         
         const select = document.getElementById('customerSelect');
         customers.forEach(c => {
@@ -57,9 +58,7 @@ async function fetchCustomers() {
 
 async function fetchProducts() {
     try {
-        const response = await fetchWithAuth('/products');
-        if (!response.ok) throw new Error('Failed to load products');
-        productsList = await response.json();
+        productsList = await httpRequest.get('products');
         
         const select = document.getElementById('productSelect');
         productsList.forEach(p => {
@@ -77,9 +76,7 @@ async function fetchProducts() {
 async function loadOrderData(id) {
     try {
         // API doesn't have GET /orders/{id}, so we fetch all and find
-        const response = await fetchWithAuth('/orders');
-        if (!response.ok) throw new Error('Failed to load order');
-        const orders = await response.json();
+        const orders = await httpRequest.get('orders');
         const order = orders.find(o => o.id == id);
         
         if (!order) {
@@ -135,16 +132,10 @@ async function handleFormSubmit(event) {
     };
 
     try {
-        const url = isEditMode ? `/orders/${currentOrderId}` : `/orders`;
-        const method = isEditMode ? 'PUT' : 'POST';
-
-        const response = await fetchWithAuth(url, {
-            method: method,
-            body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        if (isEditMode) {
+            await httpRequest.put(`orders/${currentOrderId}`, payload);
+        } else {
+            await httpRequest.post('orders', payload);
         }
 
         alert(isEditMode ? 'Cập nhật đơn hàng thành công!' : 'Tạo đơn hàng thành công!');

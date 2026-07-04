@@ -1,4 +1,11 @@
-const API_URL = 'https://wo365ovs53.execute-api.ap-southeast-1.amazonaws.com';
+import authGuard from "../../utils/authGuard.js";
+import httpRequest from "../../utils/httpRequest.js";
+
+// Run authentication guard
+if (!authGuard()) {
+    throw new Error("Authentication required");
+}
+
 let allOrders = [];
 let currentFilter = 'all'; // 'all', 'pending', 'delivering', 'done'
 let searchQuery = '';
@@ -37,15 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function fetchOrders() {
     try {
-        const response = await fetchWithAuth('/orders', {
-            method: 'GET'
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        allOrders = await response.json();
+        allOrders = await httpRequest.get('orders');
     } catch (error) {
         console.error('Lỗi khi tải danh sách đơn hàng:', error);
         allOrders = [];
@@ -143,17 +142,15 @@ async function deleteOrder(id) {
     if (!confirm('Bạn có chắc chắn muốn xóa đơn hàng này?')) return;
     
     try {
-        const response = await fetchWithAuth(`/orders/${id}`, {
-            method: 'DELETE'
-        });
-
-        if (!response.ok) {
-            throw new Error('Lỗi khi xóa đơn hàng');
-        }
-        
+        await httpRequest.del(`orders/${id}`);
         fetchOrders();
     } catch (error) {
         console.error('Lỗi khi xóa:', error);
         alert('Xóa thất bại!');
     }
 }
+
+// Expose functions to window for inline HTML event handlers (onclick)
+window.viewOrder = viewOrder;
+window.editOrder = editOrder;
+window.deleteOrder = deleteOrder;
