@@ -103,11 +103,11 @@ export function mount(el) {
             <aside class="sidebar" id="sidebar">
                 <h2>ShopAdmin</h2>
                 <ul>
-                    <li><a href="#/home"><i class="fas fa-home"></i> Tổng quan</a></li>
-                    <li><a href="#/products"><i class="fas fa-box"></i> Sản phẩm</a></li>
-                    <li><a href="#/orders"><i class="fas fa-shopping-cart"></i> Đơn hàng</a></li>
-                    <li class="active"><i class="fas fa-users"></i> Khách hàng</li>
-                    <li><a href="#/reports"><i class="fas fa-chart-line"></i> Báo cáo</a></li>
+                    <li><a href="/app/home/index.html"><i class="fas fa-home"></i> Tổng quan</a></li>
+                    <li><a href="/app/products/index.html"><i class="fas fa-box"></i> Sản phẩm</a></li>
+                    <li><a href="/app/orders/index.html"><i class="fas fa-shopping-cart"></i> Đơn hàng</a></li>
+                    <li class="active"><a href="#/customers"><i class="fas fa-users"></i> Khách hàng</a></li>
+                    <li><a href="/app/reports/index.html"><i class="fas fa-chart-line"></i> Báo cáo</a></li>
                 </ul>
                 <button class="logout-btn" id="logoutBtn">
                     <i class="fas fa-sign-out-alt"></i> Đăng xuất
