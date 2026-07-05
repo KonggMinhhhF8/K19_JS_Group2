@@ -3,7 +3,7 @@ import { router } from "../router.js";
 
 export function mount(el) {
     if (localStorage.getItem("refreshToken")) {
-        router.navigate("/customers");
+        router.navigate("/home");
         return;
     }
 
@@ -227,7 +227,7 @@ export function mount(el) {
 
             const redirect = localStorage.getItem("redirectAfterLogin");
             localStorage.removeItem("redirectAfterLogin");
-            router.navigate(redirect || "/customers");
+            router.navigate(redirect || "/home");
         } catch (error) {
             loginError.textContent = "Email hoặc mật khẩu không chính xác.";
             loginError.style.display = "block";
