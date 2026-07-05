@@ -39,7 +39,7 @@ class HttpRequest {
             const response = await res.json();
 
             if (!res.ok) {
-                if (res.status === 401) {
+                if (res.status === 401 && !path.startsWith("auth/")) {
                     await this._refreshToken();
                     return await this._send(path, method, data, options);
                 }
