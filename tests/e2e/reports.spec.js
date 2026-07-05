@@ -4,11 +4,11 @@ const { API_BASE } = require('../fixtures/testData');
 
 const REPORTS_URL = 'http://localhost:5173/app/reports/index.html';
 
-// Mock data báo cáo
+const todayStr = new Date().toISOString().split('T')[0];
 const mockOrders = [
-  { id: 1, createdAt: new Date().toISOString(), amount: 2, product: { id: 1, price: 150000, categoryId: 1 }, customer: { id: 1 } },
-  { id: 2, createdAt: new Date().toISOString(), amount: 1, product: { id: 2, price: 350000, categoryId: 1 }, customer: { id: 2 } },
-  { id: 3, createdAt: new Date().toISOString(), amount: 3, product: { id: 3, price: 200000, categoryId: 2 }, customer: { id: 1 } },
+  { id: 1, date: todayStr, amount: 2, product: { id: 1, price: 150000, categoryId: 1 }, customer: { id: 1 } },
+  { id: 2, date: todayStr, amount: 1, product: { id: 2, price: 350000, categoryId: 1 }, customer: { id: 2 } },
+  { id: 3, date: todayStr, amount: 3, product: { id: 3, price: 200000, categoryId: 2 }, customer: { id: 1 } },
 ];
 
 const mockProducts = [
@@ -195,4 +195,58 @@ test.describe('Reports Page', () => {
     const token = await page.evaluate(() => localStorage.getItem('refreshToken'));
     expect(token).toBeNull();
   });
+
+  // ─── TC13: Lọc báo cáo theo khoảng ngày hoạt động chính xác ───────────────
+  test('TC13 - Lọc báo cáo theo khoảng ngày hoạt động chính xác', async ({ page }) => {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+    const tomorrow = new Date();
+    tomorrow.setDate(today.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+    const dynamicOrders = [
+      { id: 1, date: yesterdayStr, amount: 2, product: { id: 1, price: 150000, categoryId: 1 }, customer: { id: 1 } },
+      { id: 2, date: todayStr, amount: 1, product: { id: 2, price: 350000, categoryId: 1 }, customer: { id: 2 } },
+      { id: 3, date: tomorrowStr, amount: 3, product: { id: 3, price: 200000, categoryId: 2 }, customer: { id: 1 } },
+    ];
+
+    await page.route('**/products', async (r) => {
+      await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(mockProducts) });
+    });
+    await page.route('**/orders', async (r) => {
+      await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(dynamicOrders) });
+    });
+    await page.route('**/categories', async (r) => {
+      await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(mockCategories) });
+    });
+    await page.route('**/auth/**', async (r) => {
+      await r.fulfill({ status: 401, body: 'Unauthorized' });
+    });
+
+    await page.addInitScript(() => {
+      localStorage.setItem('accessToken', 'mock-access-token');
+      localStorage.setItem('refreshToken', 'mock-refresh-token');
+    });
+
+    await page.goto(REPORTS_URL);
+
+    // Mặc định ban đầu: hiển thị toàn bộ 3 đơn hàng trước khi bấm Lọc
+    await expect(page.locator('#totalOrders')).toHaveText('3', { timeout: 10000 });
+    await expect(page.locator('#totalRevenue')).toContainText('1.250.000');
+
+    // Chuyển filter từ todayStr đến todayStr (chỉ lấy ngày hôm nay)
+    await page.locator('#fromDate').fill(todayStr);
+    await page.locator('#toDate').fill(todayStr);
+    await page.locator('#btnFilter').click();
+
+    // Kết quả sau khi lọc: chỉ có Order 2. Tổng đơn = 1. Doanh thu = 350k.
+    await expect(page.locator('#totalOrders')).toHaveText('1', { timeout: 10000 });
+    await expect(page.locator('#totalRevenue')).toContainText('350.000');
+  });
 });
+
