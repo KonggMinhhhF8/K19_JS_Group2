@@ -3,6 +3,8 @@ playwright-report/
 test-results/
 .playwright/
 .env
+.env.local
 .gemini/
 dist/
 .vite/
+.DS_Store
