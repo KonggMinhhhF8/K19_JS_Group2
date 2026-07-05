@@ -1,6 +1,5 @@
-import httpRequest from "../utils/httpRequest.js";
-import authGuard from "../utils/authGuard.js";
-import logout from "../utils/logout.js";
+const API_URL = "https://wo365ovs53.execute-api.ap-southeast-1.amazonaws.com";
+const LOGIN_URL = "../login/index.html";
 
 let revenueChart = null;
 let categoryChart = null;
@@ -9,9 +8,74 @@ let allProducts = [];
 let allOrders = [];
 let allCategories = [];
 
+// ===== AUTH GUARD =====
+function checkAuth() {
+    const token = localStorage.getItem("accessToken");
+    const refreshToken = localStorage.getItem("refreshToken");
+    if (!token && !refreshToken) {
+        localStorage.setItem("redirectAfterLogin", window.location.href);
+        window.location.href = LOGIN_URL;
+        return false;
+    }
+    return true;
+}
+
+// ===== LOGOUT =====
+function logout() {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    window.location.href = LOGIN_URL;
+}
+
+// ===== TOKEN REFRESH =====
+async function refreshAccessToken() {
+    const refreshToken = localStorage.getItem("refreshToken");
+    if (!refreshToken) {
+        logout();
+        return null;
+    }
+    try {
+        const res = await fetch(`${API_URL}/auth/refresh`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refreshToken })
+        });
+        if (!res.ok) throw new Error("Refresh token expired");
+        const data = await res.json();
+        localStorage.setItem("accessToken", data.accessToken);
+        if (data.refreshToken) {
+            localStorage.setItem("refreshToken", data.refreshToken);
+        }
+        return data.accessToken;
+    } catch (error) {
+        console.error("Token refresh failed:", error);
+        logout();
+        return null;
+    }
+}
+
+// ===== FETCH WITH AUTH (auto retry on 401) =====
+async function fetchWithAuth(url, options = {}) {
+    let token = localStorage.getItem("accessToken");
+    const headers = {
+        "Content-Type": "application/json",
+        ...options.headers
+    };
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    let res = await fetch(url, { ...options, headers });
+
+    if (res.status === 401) {
+        token = await refreshAccessToken();
+        if (!token) return res;
+        headers.Authorization = `Bearer ${token}`;
+        res = await fetch(url, { ...options, headers });
+    }
+    return res;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-    // Bảo vệ route: nếu chưa đăng nhập thì chuyển về login
-    authGuard();
+    if (!checkAuth()) return;
 
     initializeDateFilter();
     loadReport();
@@ -21,7 +85,6 @@ document.addEventListener("DOMContentLoaded", () => {
         btnFilter.addEventListener("click", filterReport);
     }
 
-    // Logout button handler
     const logoutBtn = document.getElementById("logoutBtn");
     if (logoutBtn) {
         logoutBtn.addEventListener("click", logout);
@@ -30,15 +93,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function loadReport() {
     try {
-        const [products, orders, categories] = await Promise.all([
-            httpRequest.get("products"),
-            httpRequest.get("orders"),
-            httpRequest.get("categories"),
+        const [productsRes, ordersRes, categoriesRes] = await Promise.all([
+            fetchWithAuth(`${API_URL}/products`),
+            fetchWithAuth(`${API_URL}/orders`),
+            fetchWithAuth(`${API_URL}/categories`)
         ]);
 
-        allProducts = Array.isArray(products) ? products : [];
-        allOrders = Array.isArray(orders) ? orders : [];
-        allCategories = Array.isArray(categories) ? categories : [];
+        if (!productsRes.ok || !ordersRes.ok || !categoriesRes.ok) {
+            throw new Error("API request failed");
+        }
+
+        allProducts = await productsRes.json();
+        allOrders = await ordersRes.json();
+        allCategories = await categoriesRes.json();
 
         renderSummary(allProducts, allOrders, allCategories);
         renderRevenueChart(allOrders);
