@@ -1,12 +1,11 @@
-const BASE_URL =
-    "https://wo365ovs53.execute-api.ap-southeast-1.amazonaws.com/";
+const BASE_URL = "https://wo365ovs53.execute-api.ap-southeast-1.amazonaws.com/";
 
 const getNewAccessToken = async () => {
     const refreshToken = localStorage.getItem("refreshToken");
 
     if (!refreshToken) {
-        alert("Get data failed");
-        return;
+        _logout();
+        return null;
     }
 
     try {
@@ -16,17 +15,25 @@ const getNewAccessToken = async () => {
             body: JSON.stringify({ refreshToken }),
         });
 
-        if (!res.ok) throw new Error("Refresh failed");
+        if (!res.ok) throw new Error("Refresh token expired");
 
-        const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
-            await res.json();
-        localStorage.setItem("accessToken", newAccessToken);
-        localStorage.setItem("refreshToken", newRefreshToken);
+        const data = await res.json();
+        localStorage.setItem("accessToken", data.accessToken);
+        if (data.refreshToken) {
+            localStorage.setItem("refreshToken", data.refreshToken);
+        }
+        return data.accessToken;
     } catch (error) {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        window.location.href = "/#/login";
+        console.error("Token refresh failed:", error);
+        _logout();
+        return null;
     }
 };
+
+function _logout() {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    window.location.href = "../login/index.html";
+}
 
 export default getNewAccessToken;

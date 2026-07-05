@@ -1,4 +1,5 @@
 import getNewAccessToken from "./getNewAccessToken.js";
+
 class HttpRequest {
     constructor() {
         this.baseUrl =
@@ -76,4 +77,5 @@ class HttpRequest {
 }
 
 const httpRequest = new HttpRequest();
+
 export default httpRequest;
