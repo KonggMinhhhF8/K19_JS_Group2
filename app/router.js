@@ -11,13 +11,10 @@ export const router = new Navigo("/", { hash: true });
 const app = document.getElementById("app");
 
 router
-  .on("/home", () => router.navigate("/products"))
   .on("/login", () => mountLogin(app))
   .on("/customers", () => mountCustomers(app))
   .on("/products", () => mountProductListPage(app))
   .on("/products/create", () => mountProductFormPage(app))
-  .on("/orders", () => router.navigate("/products"))
-  .on("/reports", () => router.navigate("/products"))
-  .notFound(() => router.navigate("/products"));
+  .notFound(() => router.navigate("/login"));
 
 router.resolve();
