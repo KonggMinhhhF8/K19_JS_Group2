@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --ink: #0E1726;
+            --slate: #1B2A41;
+            --teal: #0D9488;
+            --teal-dark: #0B7C72;
+            --field: #F4F6F8;
+            --field-line: #D5DCE3;
+            --muted: #67748A;
+            --white: #FFFFFF;
+            --danger: #D9534F;
+            --radius: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Inter", system-ui, -apple-system, sans-serif;
+            color: var(--ink);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background:
+                radial-gradient(1100px 600px at 15% -10%, #25405E 0%, transparent 55%),
+                radial-gradient(900px 700px at 110% 120%, #0D9488 0%, transparent 50%),
+                linear-gradient(160deg, #0E1726 0%, #14223A 60%, #0E1726 100%);
+        }
+
+        /* subtle ambient grain so the gradient isn't flat */
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: .04;
+            background-image: radial-gradient(var(--white) 1px, transparent 1px);
+            background-size: 4px 4px;
+        }
+
+        .card {
+            position: relative;
+            width: 100%;
+            max-width: 410px;
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 40px 36px 32px;
+            box-shadow: 0 30px 70px -25px rgba(8, 16, 30, .65);
+            animation: rise .6s cubic-bezier(.2, .8, .2, 1) both;
+        }
+
+        @keyframes rise {
+            from {
+                opacity: 0;
+                transform: translateY(18px) scale(.985);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 28px;
+        }
+
+        .brand .dot {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: linear-gradient(140deg, var(--teal), #3BC0B3);
+            display: grid;
+            place-items: center;
+            box-shadow: 0 6px 16px -4px rgba(13, 148, 136, .6);
+        }
+
+        .brand .dot svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .brand span {
+            font-family: "Space Grotesk", sans-serif;
+            font-weight: 600;
+            letter-spacing: .2px;
+        }
+
+        h1 {
+            font-family: "Space Grotesk", sans-serif;
+            font-size: 1.7rem;
+            line-height: 1.15;
+            font-weight: 700;
+            margin: 0 0 6px;
+        }
+
+        .sub {
+            margin: 0 0 28px;
+            color: var(--muted);
+            font-size: .93rem;
+        }
+
+        .field {
+            position: relative;
+            margin-bottom: 18px;
+        }
+
+        .field input {
+            width: 100%;
+            padding: 22px 14px 8px;
+            font-size: .97rem;
+            font-family: inherit;
+            color: var(--ink);
+            background: var(--field);
+            border: 1.5px solid transparent;
+            border-radius: 12px;
+            outline: none;
+            transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
+        }
+
+        .field input:hover {
+            background: #EEF1F4;
+        }
+
+        .field input:focus {
+            background: var(--white);
+            border-color: var(--teal);
+            box-shadow: 0 0 0 4px rgba(13, 148, 136, .12);
+        }
+
+        /* floating label */
+        .field label {
+            position: absolute;
+            left: 15px;
+            top: 15px;
+            color: var(--muted);
+            font-size: .97rem;
+            pointer-events: none;
+            transition: transform .16s ease, color .16s ease, font-size .16s ease;
+            transform-origin: left top;
+        }
+
+        .field input:focus+label,
+        .field input:not(:placeholder-shown)+label {
+            transform: translateY(-9px) scale(.78);
+            color: var(--teal-dark);
+            font-weight: 500;
+        }
+
+        /* show/hide password button */
+        .toggle {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: transparent;
+            color: var(--muted);
+            width: 38px;
+            height: 38px;
+            border-radius: 9px;
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+            transition: color .15s ease, background .15s ease;
+        }
+
+        .toggle:hover {
+            color: var(--ink);
+            background: #EAEEF2;
+        }
+
+        .toggle svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            margin: 4px 0 24px;
+            font-size: .88rem;
+        }
+
+        .remember {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .remember input {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--teal);
+            cursor: pointer;
+        }
+
+        .link {
+            color: var(--teal-dark);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .link:hover {
+            text-decoration: underline;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            font-family: "Space Grotesk", sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            letter-spacing: .2px;
+            color: var(--white);
+            background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 12px 24px -10px rgba(13, 148, 136, .8);
+            transition: transform .12s ease, box-shadow .18s ease, filter .18s ease;
+        }
+
+        .btn:hover {
+            filter: brightness(1.05);
+            box-shadow: 0 16px 30px -10px rgba(13, 148, 136, .9);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .foot {
+            margin: 22px 0 0;
+            text-align: center;
+            font-size: .9rem;
+            color: var(--muted);
+        }
+
+        .error {
+            display: none;
+            color: var(--danger);
+            font-size: .82rem;
+            margin: 6px 2px 0;
+        }
+
+        .field.invalid input {
+            border-color: var(--danger);
+            background: var(--white);
+        }
+
+        .field.invalid .error {
+            display: block;
+        }
+
+        /* keyboard focus visibility */
+        a:focus-visible,
+        button:focus-visible,
+        input:focus-visible {
+            outline: 2px solid var(--teal);
+            outline-offset: 2px;
+        }
+
+        @media (prefers-reduced-motion:reduce) {
+            .card {
+                animation: none;
+            }
+
+            * {
+                transition: none !important;
+            }
+        }
+
+        @media (max-width:420px) {
+            .card {
+                padding: 32px 22px 26px;
+            }
+
+            h1 {
+                font-size: 1.45rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="card">
+        <h1>Chào mừng trở lại</h1>
+        <p class="sub">Đăng nhập để tiếp tục vào tài khoản của bạn.</p>
+
+        <form id="loginForm" novalidate>
+            <div class="field" id="emailField">
+                <input type="email" id="email" name="email" placeholder=" " autocomplete="email" required>
+                <label for="email">Email</label>
+                <p class="error">Vui lòng nhập một email hợp lệ.</p>
+            </div>
+
+            <div class="field" id="passField">
+                <input type="password" id="password" name="password" placeholder=" " autocomplete="current-password"
+                    required>
+                <label for="password">Mật khẩu</label>
+                <button type="button" class="toggle" id="togglePass" aria-label="Hiện mật khẩu" aria-pressed="false">
+                    <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" />
+                        <circle cx="12" cy="12" r="3" />
+                    </svg>
+                </button>
+                <p class="error">Mật khẩu phải có ít nhất 6 ký tự.</p>
+            </div>
+
+            <!-- <div class="row">
+                <a href="#" class="link">Quên mật khẩu?</a>
+            </div> -->
+
+            <p class="error" id="loginError" style="text-align:center; margin-bottom:10px;"></p>
+            <button type="submit" class="btn">Đăng nhập</button>
+        </form>
+    </main>
+    <script type="module" src="main.js"></script>
+
+</body>
+
+</html>
