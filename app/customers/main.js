@@ -3,6 +3,7 @@ import getNewAccessToken from "../../utils/getNewAccessToken.js";
 import { createModal } from "./modal.js";
 import { renderCustomerRow, createStatCard } from "./render.js";
 import { router } from "../router.js";
+import { renderSidebarHTML, initSidebar } from "../shared/sidebar.js";
 
 export function mount(el) {
   if (!localStorage.getItem("refreshToken")) {
@@ -100,19 +101,7 @@ export function mount(el) {
 
         <div class="overlay" id="overlay"></div>
         <div class="container">
-            <aside class="sidebar" id="sidebar">
-                <h2>ShopAdmin</h2>
-                <ul>
-                    <li><a href="#/home"><i class="fas fa-home"></i> Tổng quan</a></li>
-                    <li><a href="#/products"><i class="fas fa-box"></i> Sản phẩm</a></li>
-                    <li><a href="#/orders"><i class="fas fa-shopping-cart"></i> Đơn hàng</a></li>
-                    <li class="active"><i class="fas fa-users"></i> Khách hàng</li>
-                    <li><a href="#/reports"><i class="fas fa-chart-line"></i> Báo cáo</a></li>
-                </ul>
-                <button class="logout-btn" id="logoutBtn">
-                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
-                </button>
-            </aside>
+            ${renderSidebarHTML("customers")}
 
             <main class="main-content">
                 <header>
@@ -213,22 +202,7 @@ export function mount(el) {
   el.querySelector("#search").addEventListener("keyup", searchCustomer);
   el.querySelector("#tierFilter").addEventListener("change", filterByTier);
 
-  // Sidebar toggle (mobile)
-  const sidebar = el.querySelector("#sidebar");
-  const overlay = el.querySelector("#overlay");
-  function toggleMenu() {
-    sidebar.classList.toggle("active");
-    overlay.classList.toggle("active");
-  }
-  el.querySelector("#menuToggle").addEventListener("click", toggleMenu);
-  overlay.addEventListener("click", toggleMenu);
-
-  // Đăng xuất
-  el.querySelector("#logoutBtn").addEventListener("click", () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    router.navigate("/login");
-  });
+  initSidebar(el, router);
 
   // Fetch data và render
   async function loadData() {

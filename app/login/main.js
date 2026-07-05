@@ -171,15 +171,20 @@ export function mount(el) {
 
     const toggle = el.querySelector("#togglePass");
     const eye = el.querySelector("#eyeIcon");
-    const eyeOpen = '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/>';
-    const eyeOff = '<path d="M9.9 4.2A10.9 10.9 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19M6.6 6.6A18.5 18.5 0 0 0 1 12s4 8 11 8a10.9 10.9 0 0 0 5.4-1.4"/><path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"/><line x1="2" y1="2" x2="22" y2="22"/>';
+    const eyeOpen =
+        '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/>';
+    const eyeOff =
+        '<path d="M9.9 4.2A10.9 10.9 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19M6.6 6.6A18.5 18.5 0 0 0 1 12s4 8 11 8a10.9 10.9 0 0 0 5.4-1.4"/><path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"/><line x1="2" y1="2" x2="22" y2="22"/>';
 
     toggle.addEventListener("click", () => {
         const show = password.type === "password";
         password.type = show ? "text" : "password";
         eye.innerHTML = show ? eyeOff : eyeOpen;
         toggle.setAttribute("aria-pressed", String(show));
-        toggle.setAttribute("aria-label", show ? "Ẩn mật khẩu" : "Hiện mật khẩu");
+        toggle.setAttribute(
+            "aria-label",
+            show ? "Ẩn mật khẩu" : "Hiện mật khẩu",
+        );
     });
 
     const loginError = el.querySelector("#loginError");
@@ -214,7 +219,7 @@ export function mount(el) {
         try {
             const { accessToken, refreshToken } = await httpRequest.post(
                 "auth/signin",
-                { email: emailVal, password: passwordVal }
+                { email: emailVal, password: passwordVal },
             );
 
             localStorage.setItem("accessToken", accessToken);

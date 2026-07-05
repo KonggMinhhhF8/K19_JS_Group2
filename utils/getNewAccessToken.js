@@ -1,3 +1,5 @@
+import { router } from "../app/router.js";
+
 const BASE_URL = "https://wo365ovs53.execute-api.ap-southeast-1.amazonaws.com/";
 
 const getNewAccessToken = async () => {
@@ -33,7 +35,7 @@ const getNewAccessToken = async () => {
 function _logout() {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
-    window.location.href = "../login/index.html";
+    router.navigate("/login");
 }
 
 export default getNewAccessToken;

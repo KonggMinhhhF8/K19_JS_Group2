@@ -1,3 +1,5 @@
+import { renderSidebarHTML } from "../shared/sidebar.js";
+
 export const productPageStyles = `
 :root {
   --primary-color: #3498db;
@@ -45,6 +47,34 @@ a {
   top: 0;
   height: 100vh;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.logout-btn {
+  margin-top: auto;
+  padding: 12px;
+  cursor: pointer;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  color: #e74c3c;
+  background: transparent;
+  border: none;
+  width: 100%;
+  font-size: 1rem;
+  text-align: left;
+  transition: 0.2s;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 18px;
+}
+
+.logout-btn i {
+  margin-right: 15px;
+}
+
+.logout-btn:hover {
+  background: rgba(231, 76, 60, 0.15);
 }
 
 .sidebar h2 {
@@ -601,18 +631,9 @@ td {
 `;
 
 export function renderProductListPage() {
-  return `
+    return `
     <div class="container">
-      <aside class="sidebar">
-        <h2>ShopAdmin</h2>
-        <ul>
-          <li><a href="#/home"><i class="fas fa-home"></i> Tổng quan</a></li>
-          <li class="active"><a href="#/products"><i class="fas fa-box"></i> Sản phẩm</a></li>
-          <li><a href="#/orders"><i class="fas fa-shopping-cart"></i> Đơn hàng</a></li>
-          <li><a href="#/customers"><i class="fas fa-users"></i> Khách hàng</a></li>
-          <li><a href="#/reports"><i class="fas fa-chart-line"></i> Báo cáo</a></li>
-        </ul>
-      </aside>
+      ${renderSidebarHTML("products")}
 
       <main class="main-content">
         <header>
@@ -694,18 +715,9 @@ export function renderProductListPage() {
 }
 
 export function renderProductFormPage() {
-  return `
+    return `
     <div class="container">
-      <aside class="sidebar">
-        <h2>ShopAdmin</h2>
-        <ul>
-          <li><a href="#/home"><i class="fas fa-home"></i> Tổng quan</a></li>
-          <li class="active"><a href="#/products"><i class="fas fa-box"></i> Sản phẩm</a></li>
-          <li><a href="#/orders"><i class="fas fa-shopping-cart"></i> Đơn hàng</a></li>
-          <li><a href="#/customers"><i class="fas fa-users"></i> Khách hàng</a></li>
-          <li><a href="#/reports"><i class="fas fa-chart-line"></i> Báo cáo</a></li>
-        </ul>
-      </aside>
+      ${renderSidebarHTML("products")}
 
       <main class="main-content">
         <div class="page-top">
