@@ -6,7 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Báo Cáo Doanh Thu | ShopAdmin</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <link rel="stylesheet" href="report.css">
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="./report.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -30,6 +31,9 @@
         </li>
         <li class="active">
           <i class="fas fa-chart-line"></i> Báo cáo
+        </li>
+        <li onclick="window.location.href='../login/index.html'" style="display:none" id="loginNavItem">
+          <i class="fas fa-sign-in-alt"></i> Đăng nhập
         </li>
       </ul>
       <button class="logout-btn" id="logoutBtn">
@@ -101,7 +105,7 @@
       </div>
     </main>
   </div>
-  <script src="./report.js"></script>
+  <script type="module" src="./report.js"></script>
 </body>
 
 </html>
