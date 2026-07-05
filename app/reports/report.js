@@ -106,39 +106,39 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 async function loadReport() {
-try {
-    const [productsRes, ordersRes, categoriesRes] = await Promise.all([
-        fetchWithAuth(`${API_URL}/products`),
-        fetchWithAuth(`${API_URL}/orders`),
-        fetchWithAuth(`${API_URL}/categories`)
-    ]);
+    try {
+        const [productsRes, ordersRes, categoriesRes] = await Promise.all([
+            fetchWithAuth(`${API_URL}/products`),
+            fetchWithAuth(`${API_URL}/orders`),
+            fetchWithAuth(`${API_URL}/categories`)
+        ]);
 
-    if (
-        !productsRes.ok ||
-        !ordersRes.ok ||
-        !categoriesRes.ok
-    ) {
-        throw new Error("API request failed");
+        if (
+            !productsRes.ok ||
+            !ordersRes.ok ||
+            !categoriesRes.ok
+        ) {
+            throw new Error("API request failed");
+        }
+
+        allProducts = await productsRes.json();
+        allOrders = await ordersRes.json();
+        allCategories = await categoriesRes.json();
+
+        renderSummary(
+            allProducts,
+            allOrders,
+            allCategories
+        );
+
+        renderRevenueChart(allOrders);
+        renderCategoryChart(allOrders, allProducts, allCategories);
+        renderTopProducts(allOrders);
+
+    } catch (error) {
+        console.error(error);
+        alert("Không thể tải dữ liệu báo cáo. Vui lòng đăng nhập lại.");
     }
-
-    allProducts = await productsRes.json();
-    allOrders = await ordersRes.json();
-    allCategories = await categoriesRes.json();
-
-    renderSummary(
-        allProducts,
-        allOrders,
-        allCategories
-    );
-
-    renderRevenueChart(allOrders);
-    renderCategoryChart(allOrders, allProducts, allCategories);
-    renderTopProducts(allOrders);
-
-} catch (error) {
-    console.error(error);
-    alert("Không thể tải dữ liệu báo cáo. Vui lòng đăng nhập lại.");
-}
 }
 
 
