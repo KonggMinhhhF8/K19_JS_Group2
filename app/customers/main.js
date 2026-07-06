@@ -237,6 +237,14 @@ export function mount(el) {
     }
   }
 
+  el.querySelector("#statsSection").append(
+    createStatCard("Tổng khách hàng", "Đang tải...", "totalCustomers"),
+    createStatCard("Khách hàng mới (Tháng)", "Đang tải..."),
+    createStatCard("Tỉ lệ quay lại", "Đang tải..."),
+  );
+  el.querySelector("tbody").innerHTML =
+    '<tr><td colspan="6" style="text-align: center; padding: 30px; color: #7f8c8d;">Đang tải...</td></tr>';
+
   (async () => {
     try {
       await loadData();
